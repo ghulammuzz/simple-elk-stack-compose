@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: ${ELASTICSEARCH_IMAGE}
+    container_name: ${ELASTICSEARCH_CONTAINER_NAME}
+    ports:
+      - "${ELASTICSEARCH_PORT}:9200"
+    environment:
+      - discovery.type=${ELASTICSEARCH_DISCOVERY_TYPE}
+    
+  kibana:
+    image: ${KIBANA_IMAGE}
+    container_name: ${KIBANA_CONTAINER_NAME}
+    environment:
+      - "xpack.security.authc.http.enabled=${KIBANA_HTTP_ENABLED}"
+      - ELASTICSEARCH_HOSTS=${ELASTICSEARCH_HOSTS}
+    ports:
+      - "${KIBANA_PORT}:5601"
+    depends_on:
+      - elasticsearch
+  
+  filebeat:
+    image: ${FILEBEAT_IMAGE}
+    container_name: ${FILEBEAT_CONTAINER_NAME}
+    command: ${FILEBEAT_COMMAND}
+    volumes:
+      - ${FILEBEAT_LOGS_VOLUME}
+    depends_on:
+      - elasticsearch
+      - kibana
+      - app
+
+  app:
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    env_file:
+      - ${APP_ENV_FILE}
+    ports:
+      - "${APP_PORT}:5000"
+    volumes:
+      - ${APP_LOGS_VOLUME}
+
+volumes:
+  ${ELASTICSEARCH_DATA_VOLUME}:
+  ${APP_LOGS_VOLUME}:
